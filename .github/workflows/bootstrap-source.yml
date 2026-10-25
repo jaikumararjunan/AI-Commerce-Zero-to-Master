@@ -1,0 +1,42 @@
+name: Bootstrap full project source
+
+on:
+  push:
+    paths:
+      - 'bootstrap/READY'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  unpack-source:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Rehydrate full source tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          base64 -d bootstrap/source.b64 > /tmp/source.tar.gz
+          tar -xzf /tmp/source.tar.gz -C .
+          rm -rf bootstrap
+          rm -f .write_test
+
+      - name: Commit source tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "AI Commerce Bootstrap"
+          git config user.email "actions@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No source changes to commit."
+            exit 0
+          fi
+          git commit -m "feat: bootstrap complete AI Commerce source tree"
+          git push origin HEAD:main
